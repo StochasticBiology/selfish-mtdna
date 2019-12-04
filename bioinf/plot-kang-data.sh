@@ -1,5 +1,7 @@
 # Gnuplot: plot classification of reverting vs non-reverting sequences from analysis of Kang et al. data
 
+# suggested terminal: svg 800x600
+
 reset
 set xlabel "CSBII difference"
 set ylabel "TAS difference"
@@ -25,9 +27,9 @@ myshift = 0
 myps = 2
 
 # parameters from logistic regression (see accompanying R code)
-intercept = -2.463
-l_300_diff = 1.661
-l_16345_diff = -1.701
+intercept = -2.519
+l_300_diff = 1.746
+l_16345_diff = -1.707
 
 # first plot is the inferred regression function; subsequent plots are the data. 6 plots: 3 each for reverting and non-reverting types ($5 == 1 and $5 == 0 respectively); one for point, one for outline, one for label
 splot exp(l_300_diff*x + l_16345_diff*y + intercept)/(1. + exp(l_300_diff*x + l_16345_diff*y + intercept)) lw 0, "kang-competition.txt" u ($5 == 0 ? $2+fx($1) : 1/0):($4 + fy($1)):(2):("") w labels point pt 7 ps myps lc rgbcolor "#AAAAAA", "" u ($5 == 0 ? $2+fx($1) : 1/0):($4 + fy($1)):(2):("") w labels point pt 6 ps myps lc rgbcolor "#888888",  "" u ($5 == 1 ? $2+fx($1) : 1/0):($4 + fy($1)):(2):("") w labels point pt 11 ps myps lc rgbcolor "#FFCCCC", "" u ($5 == 1 ? $2+fx($1) : 1/0):($4 + fy($1)):(2):("") w labels point pt 10 ps myps lc rgbcolor "#FFAAAA", "" u ($5 == 0 ? $2+fx($1)-myshift : 1/0):($4 + fy($1)-myshift):(2):($1) w labels font "Arial, 10" tc rgbcolor "#FFFFFF", "" u ($5 == 1 ? $2+fx($1)-myshift : 1/0):($4 + fy($1)-myshift):(2):($1) w labels font "Arial, 10" tc rgbcolor "#FF0000"

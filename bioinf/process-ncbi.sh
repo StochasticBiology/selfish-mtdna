@@ -3,7 +3,9 @@
 
 # separate out accession ref and G-quad statistics from output of find-gquads.c
 
-awk 'BEGIN{FS="|";}{print $4, $5;}' $1 | awk '{print $1, $(NF-7), $(NF-3), $(NF-6), $(NF-5), $(NF-4), $(NF-2), $(NF-1), $NF;}' | sed 's/[.][0-9]//g' | sort > summary-$1
+# used for a different, deprecated file format
+# awk 'BEGIN{FS="|";}{print $4, $5;}' $1 | awk '{print $1, $(NF-7), $(NF-3), $(NF-6), $(NF-5), $(NF-4), $(NF-2), $(NF-1), $NF;}' | sed 's/[.][0-9]//g' | sort > summary-$1
+awk '{print $1, $2, $10, $3, $4, $5, $11, $12, $13;}' $1 | sort > summary-$1
 
 # cross-reference this output with database.txt to output haplogroups and haplotypes
 
