@@ -13,7 +13,7 @@ bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers
   rcrs.txt -- data file containing revised Cambridge reference sequence (RCRS)
   edits.ods -- data file containing differences between Kang et al. sequences and RCRC. Taken directly from the SI of Kang et al. 2019.
   database.txt -- data file containing haplogroups and haplotypes for a set of NCBI accessions
-  [sequences-dec.nb] -- Mathematica file using edits.ods and rcrs.txt to reconstruct sequences from Kang et al. paper into FASTA format
+  [reconstruct-sequences.nb] -- Mathematica file using edits.ods and rcrs.txt to reconstruct sequences from Kang et al. paper into FASTA format
   kang-fasta.fasta -- data file, output from the above
   [mtdna-sequences.fasta] -- data file, not included in repository due to size, containing mtDNA sequences in FASTA format from NCBI
   
