@@ -16,7 +16,7 @@ bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers
   database.txt -- data file containing haplogroups and haplotypes for a set of NCBI accessions
   [reconstruct-sequences.nb] -- Mathematica file using edits.ods and rcrs.txt to reconstruct sequences from Kang et al. paper into FASTA format
   kang-fasta.fasta -- data file, output from the above
-  [mtdna-sequences.fasta] -- data file, not included in repository due to size, containing mtDNA sequences in FASTA format from NCBI
+  [mtdna-sequences.fasta] -- data file containing mtDNA sequences in FASTA format from NCBI. NOTE: this file is included to illustrate the analysis. the true data file containing all mtDNA sequences analysed in this project is too big (~0.5GB) to include in this repository, but can be downloaded from NCBI through batch downloading the accessions in files/human-set-final.txt
   
   find-gquads.c -- identifies and scores potential G-quadruplex sequences at particular regions in all sequences in a given FASTA file. run this on kang-fasta.fasta and mtdna-sequences.fasta to provide output for the following analyses.
   
