@@ -1,6 +1,8 @@
 Code for simulation and analysis of selfish mtDNA dynamics, and links with G-quadruplexes in control region
 
-sim/ -- RTS simulation of selfish mtDNA dynamics
+C, R, shell script, and Gnuplot scripts; one preprocessing Mathematica notebook is included but not required to proceed.
+
+sim/ -- RTS simulation of selfish mtDNA dynamics. these simulations should take a few hours to run on a modern machine.
   mtdna-mito.c -- simulates RTS model with mito-level selection. command-line argument determines whether parameter space is spanned (0) or a zoomed-in region is investigated (1)
   mtdna-cell.c -- simulates RTS model with cell-level selection (SI of article)
 
@@ -9,7 +11,7 @@ sim/ -- RTS simulation of selfish mtDNA dynamics
   plot-si-cell-trellis.sh -- plots output of mtdna-cell.c in Gnuplot
   plot-si-rts-time-series.sh -- plots time series output of mtdna-mito.c (0) in Gnuplot
   
-bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers
+bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers. this analysis should take a few minutes on a modern machine.
   rcrs.txt -- data file containing revised Cambridge reference sequence (RCRS)
   edits.ods -- data file containing differences between Kang et al. sequences and RCRC. Taken directly from the SI of Kang et al. 2019.
   database.txt -- data file containing haplogroups and haplotypes for a set of NCBI accessions
