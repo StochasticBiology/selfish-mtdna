@@ -1,5 +1,6 @@
 Code for simulation and analysis of selfish mtDNA dynamics, and links with G-quadruplexes in control region
-
+C, shell script, and Gnuplot scripts; one preprocessing Mathematica notebook is included but not required to proceed.
+  
 sim/ -- RTS simulation of selfish mtDNA dynamics
   mtdna-mito.c -- simulates RTS model with mito-level selection. command-line argument determines whether parameter space is spanned (0) or a zoomed-in region is investigated (1)
   mtdna-cell.c -- simulates RTS model with cell-level selection (SI of article)
