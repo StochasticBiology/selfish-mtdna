@@ -1,6 +1,5 @@
 Code for simulation and analysis of selfish mtDNA dynamics, and links with G-quadruplexes in control region
-C, shell script, and Gnuplot scripts; one preprocessing Mathematica notebook is included but not required to proceed.
-  
+
 sim/ -- RTS simulation of selfish mtDNA dynamics
   mtdna-mito.c -- simulates RTS model with mito-level selection. command-line argument determines whether parameter space is spanned (0) or a zoomed-in region is investigated (1)
   mtdna-cell.c -- simulates RTS model with cell-level selection (SI of article)
@@ -16,10 +15,11 @@ bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers
   database.txt -- data file containing haplogroups and haplotypes for a set of NCBI accessions
   [reconstruct-sequences.nb] -- Mathematica file using edits.ods and rcrs.txt to reconstruct sequences from Kang et al. paper into FASTA format
   kang-fasta.fasta -- data file, output from the above
-  [mtdna-sequences.fasta] -- data file containing mtDNA sequences in FASTA format from NCBI. NOTE: this file is included to illustrate the analysis. the true data file containing all mtDNA sequences analysed in this project is too big (~0.5GB) to include in this repository, but can be downloaded from NCBI through batch downloading the accessions in files/human-set-final.txt
+  [mtdna-sequences.fasta] -- data file, not included in repository due to size, containing mtDNA sequences in FASTA format from NCBI
   
   find-gquads.c -- identifies and scores potential G-quadruplex sequences at particular regions in all sequences in a given FASTA file. run this on kang-fasta.fasta and mtdna-sequences.fasta to provide output for the following analyses.
-  
+
+  parse-kang.sh -- rearranges output of find-gquads.c applied to Kang et al. data for processing in reverting/non-reverting pairs
   kang-competition.R -- reads output of the above, compares logistic regression models, and calculates predictive power of simple model
   plot-kang-data.sh -- plots inferred relationship and mtDNA statistics
 
