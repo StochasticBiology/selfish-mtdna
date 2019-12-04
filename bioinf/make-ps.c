@@ -19,7 +19,7 @@ int main(void)
     }
 
   // very lazy code to read output of previous pipeline and extract G-quadruplex structural information
-  fp = fopen("hist-plot-2019.txt", "r");
+  fp = fopen("hist-plot-final.txt", "r");
   do{
     fscanf(fp, "%i", &tmp);
     if(feof(fp)) break;
