@@ -1,8 +1,10 @@
-// mtDNA selfishness simulation
+// mtDNA selfishness simulation: RTS model with cell-level selection
 
 // simulate time evolution of cellular systems involving mixed mtDNA types which replicate and transcribe at different rates
 // cells are individuals; after simulating a whole bunch of initial conditions we look at the population to see what proportion ends up exceeding a "bioenergetic threshold" defined by mtDNA and protein numbers
 // the "tissue-wide" statistics for different rate parameters are then output
+
+// takes a command-line argument: whether to scale rates by current state (1) or not (0)
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,7 +77,7 @@ void Simulate(Params P, int w0, int m0, double *w, double *m, double *pw, double
     }
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
   double epsilon;
   Params P;
@@ -94,27 +96,37 @@ int main(void)
   char str[100];
   int mym0;
   double meanh, normh;
-  //  FILE *fptest;
 
   // general approach is to loop through initial conditions m0 = {0...10} and w0 = {0...100}
   // we compute the final state of the cell for each
   // imposing a given threshold, we identify those initial conditions that give a "power" exceeding this threshold
   // we then sample the final states within this set to compute the final heteroplasmy
 
+  // process command-line argument
+  // expt determines the model structure (whether or not replication rates are scaled by total mtDNA content)
+  expt = 0;
+  if(argc < 2)
+    {
+      printf("Model structure not specified; using gamma = 0\n");
+    }
+  else if(atoi(argv[1]) == 1)
+    {
+      printf("Using gamma = 1\n");
+      expt = 1;
+    }
+  else printf("Using gamma = 0\n");
+  
   // lambdaw is wild-type replication rate, against which "foreign selfishness" is measured
   for(P.lambdaw = 0.2; P.lambdaw <= 0.8; P.lambdaw += 0.3)
     {
       // epsilon describes how negative interaction between mtDNAs changes "power" (i.e. how much mixed mtDNAs are a problem)
-      epsilon = 0.0001;
-      //      for(epsilon = 0; epsilon <= 0.01; epsilon += 0.01)
+       for(epsilon = 0; epsilon <= 0.001; epsilon += 0.001)
 	{
 	  // mym0 is the initial mutant copy number
 	  for(mym0 = 10; mym0 <= 90; mym0 += 10)
 	    {
-	      // expt determines the model structure (whether or not replication rates are scaled by total mtDNA content)
-	      for(expt = 0; expt <= 1; expt++)
 		{
-		  sprintf(str, "mtdna-cell-%i-%i-%.5f-%.1f.txt", expt, mym0, epsilon, P.lambdaw);
+		  sprintf(str, "mtdna-cell-%i-%i-%.3f-%.1f.txt", expt, mym0, epsilon, P.lambdaw);
 		  fp = fopen(str, "w");
 
 		  // mtDNA and protein degradation rates are set to unit rate in both models 

@@ -5,4 +5,5 @@ gcc -o3 mtdna-cell.c -lm -o mtdna-cell.ce
 
 ./mtdna-mito.ce 0 > tmp0 &
 ./mtdna-mito.ce 1 > tmp1 &
-./mtdna-cell.ce > tmp2 &
+./mtdna-cell.ce 0 > tmp2 &
+./mtdna-cell.ce 1 > tmp3 &
