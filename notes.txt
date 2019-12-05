@@ -4,7 +4,7 @@ C, R, shell script, and Gnuplot scripts; one preprocessing Mathematica notebook 
 
 sim/ -- RTS simulation of selfish mtDNA dynamics. these simulations should take a few hours to run on a modern machine.
   mtdna-mito.c -- simulates RTS model with mito-level selection. command-line argument determines whether parameter space is spanned (0) or a zoomed-in region is investigated (1)
-  mtdna-cell.c -- simulates RTS model with cell-level selection (SI of article)
+  mtdna-cell.c -- simulates RTS model with cell-level selection (SI of article), command-line argument determines structure of model (0, rates constant; 1, rates scaled by copy number) 
 
   plot-rts.sh -- plots output of mtdna-mito.c (1) in Gnuplot
   plot-si-rts-trellis.sh -- plots output of mtdna-mito.c (0) in Gnuplot
