@@ -95,12 +95,14 @@ int main(int argc, char *argv[])
 	      fprintf(fp, "[1 0 0 %.3f 0 0] concat\n", 1.5*finds[i][j]/total);
 	      switch(j)
 		{
-  		case 0: fprintf(fp, "0.7 0.7 0.7 setrgbcolor\n"); break;
-		case 44: fprintf(fp, "0.8 0.7 0.5 setrgbcolor\n"); break;
-		case 34: fprintf(fp, "0 1 1 setrgbcolor\n"); break;
-		case 86: fprintf(fp, "0 0.4 0 setrgbcolor\n"); break;
-		case 76: fprintf(fp, "1 0 1 setrgbcolor\n"); break;
-		case 96: fprintf(fp, "0 0 1 setrgbcolor\n"); break;
+  		case 66: fprintf(fp, "0.7 0.7 0.7 setrgbcolor\n"); break;
+		case 75: fprintf(fp, "0.94 0.56 0.57 setrgbcolor\n"); break;
+		case 76: fprintf(fp, "0.96 0.84 0.55 setrgbcolor\n"); break;
+		case 86: fprintf(fp, "0.76 0.86 0.68 setrgbcolor\n"); break;
+		case 96: fprintf(fp, "0.35 0.37 0.51 setrgbcolor\n"); break;
+		case 34: fprintf(fp, "0.94 0.56 0.57 setrgbcolor\n"); break;
+		case 35: fprintf(fp, "0.35 0.37 0.51 setrgbcolor\n"); break;
+
 		default: fprintf(fp, "0 0 0 setrgbcolor\n"); break;
 		}
 	      if(j > 20) fprintf(fp, "(%i/%i) show\n", j/10, j-10*(j/10));
