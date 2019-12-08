@@ -5,12 +5,19 @@ library(pscl)
 x<-read.table("kang-competition.txt", header=T)
 
 # construct different logistic regression models
+model4 <- glm(Did_A_win ~ l_300_diff + l_16345_diff + l_16287_diff + l_16180_diff, family=binomial(link='logit'), data=x)
+
+model3a <- glm(Did_A_win ~ l_300_diff + l_16345_diff + l_16180_diff, family=binomial(link='logit'), data=x)
+model3b <- glm(Did_A_win ~ l_300_diff + l_16287_diff + l_16180_diff, family=binomial(link='logit'), data=x)
+model3c <- glm(Did_A_win ~ l_300_diff + l_16287_diff + l_16345_diff, family=binomial(link='logit'), data=x)
+
 model2a <- glm(Did_A_win ~ l_300_diff + l_16345_diff, family=binomial(link='logit'), data=x)
 model2b <- glm(Did_A_win ~ l_300_diff + l_16180_diff, family=binomial(link='logit'), data=x)
+model2c <- glm(Did_A_win ~ l_300_diff + l_16287_diff, family=binomial(link='logit'), data=x)
 model1 <- glm(Did_A_win ~ l_300_diff, family=binomial(link='logit'), data=x)
 
 # examine different models
-c(AIC(model2a), AIC(model2b), AIC(model1))
+c(AIC(model4), AIC(model3a), AIC(model3b), AIC(model3c), AIC(model2a), AIC(model2b), AIC(model2c), AIC(model1))
 pR2(model2a)
 pR2(model1)
 summary(model2a)

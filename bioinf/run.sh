@@ -4,7 +4,7 @@ gcc -o3 find-gquads.c -lm -o find-gquads.ce
 chmod +x process-ncbi.sh
 chmod +x parse-kang.sh
 
-./find-gquads.ce kang-fasta.fasta
+./find-gquads.ce kang-fasta.fasta 1
 ./parse-kang.sh
 R CMD BATCH kang-competition.R
 
