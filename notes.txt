@@ -29,3 +29,8 @@ bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers
   make-ps.c -- produces PostScript figure from these data (SI of article)
 
   [human-set-article.txt] -- summary output of above pipeline run on full mtDNA sequence set, containing accessions for all sequences used in full analysis
+  
+alignments/ -- Clustal Omega alignments of control regions from Kang et al. and mtDNA from mouse studies
+  kang-alignment.clustal_num -- Kang et al. sequences
+  mouse-cr-alignment.clustal_num -- Mouse sequences
+
