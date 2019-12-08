@@ -1,11 +1,13 @@
 // code to find and score potential G-quadruplex-forming sequences at given regions in all entries is a given FASTA file
 // takes a filename from the command line: the FASTA file to analyse
+// also takes optional "1" to output a FASTA file containing control regions for aligning
 
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char *argv[])
 {
-  FILE *fp, *fpo, *fpm;
+  FILE *fp, *fpo, *fpm, *fpc;;
   char str[100000];
   int n;
   int i, j, k;
@@ -16,12 +18,14 @@ int main(int argc, char *argv[])
   int c1count, gapcount, c2count, end;
   int csb2score;
   int region;
-
+  int outputcr;
+  
   // number of regions to analyse, and start loci for each 
-  int nregions = 3;
-  int regionstarts[] = {300, 16175, 16345};
+  int nregions = 4;
+  int regionstarts[] = {300, 16175, 16287, 16345};
 
   // process command-line argument
+  outputcr = 0;
   if(argc < 2)
     {
       printf("Need file to analyse\n");
@@ -33,20 +37,42 @@ int main(int argc, char *argv[])
       printf("Couldn't find file %s\n", argv[1]);
       return 0;
     }
-
+  if(argc == 3)
+    {
+      if(atoi(argv[2]) == 1)
+	outputcr = 1;
+    }
+  
   // open files for output
   sprintf(str, "%s-out.txt", argv[1]);
   fpo = fopen(str, "w");
   sprintf(str, "%s-tas-seqs.txt", argv[1]);
   fpm = fopen(str, "w");
-
+  if(outputcr == 1)
+    {
+      sprintf(str, "%s-cr.fasta", argv[1]);
+      fpc = fopen(str, "w");
+    }
+  
   // read through FASTA file. output label for each entry, and store the sequence in memory (str)
   do{ch = fgetc(fp);}while(ch != '>');
   do{
     if(ch == '>')
       {
-	do{ch = fgetc(fp); if(ch != '\n') fprintf(fpo, "%c", ch);}while(ch != '\n');
+	if(outputcr == 1)
+	  fprintf(fpc, "> ");
+	do{
+	  ch = fgetc(fp);
+	  if(ch != '\n')
+	    {
+	      fprintf(fpo, "%c", ch);
+	      if(outputcr == 1)
+		fprintf(fpc, "%c", ch);
+	    }
+	}while(ch != '\n');
       }
+    if(outputcr == 1)
+      fprintf(fpc, "\n");
     fprintf(fpo, " ");
     n = 0;
     do{
@@ -117,11 +143,24 @@ int main(int argc, char *argv[])
 	fprintf(fpm, " ");
       }
     fprintf(fpm, "\n");
+
+      if(outputcr == 1)
+    {
+      for(i = 16024; i < n; i++)
+	fprintf(fpc, "%c", str[i]);
+      for(i = 0; i < 576; i++)
+	fprintf(fpc, "%c", str[i]);
+      fprintf(fpc, "\n");
+    }
+
   }while(!feof(fp));
 
   fclose(fp);
   fclose(fpo);
   fclose(fpm);
+
+  if(outputcr == 1)
+    fclose(fpc);
   
   return 0;
 }
