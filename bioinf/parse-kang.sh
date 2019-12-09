@@ -1,7 +1,7 @@
 # shell script to rearrange output from G-quad finding code into description of reverting vs non-reverting pairs in Kang et al. data
 
 # label actual number of Cs in particular marginal cases 
-sed 's/3 - 0 0 0/3 - 2 7 4/g' kang-fasta.fasta-out.txt | sed 's/0 0 0 C/2 1 3 C/g' > tmp
+sed 's/3 - 0 0 0/3 - 2 7 4/g' kang-fasta.fasta-out.txt | sed 's/ 0 0 0 C/ 2 1 3 C/g' > tmp
 
 # rearrange outputs for parsing in R
 awk 'BEGIN{
