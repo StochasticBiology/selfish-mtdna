@@ -18,7 +18,12 @@ model2c <- bayesglm(Did_A_win ~ l_300_diff + l_16287_diff, family=binomial, data
 model1 <- bayesglm(Did_A_win ~ l_300_diff, family=binomial, data=x)
 
 # examine different models
-c(BIC(model4), BIC(model3a), BIC(model3b), BIC(model3c), BIC(model2a), BIC(model2b), BIC(model2c), BIC(model1)) 
+aicp4 = (2*4*4+2*4)/(26-4-1)
+aicp3 = (2*3*3+2*3)/(26-3-1)
+aicp2 = (2*2*2+2*2)/(26-2-1)
+aicp1 = (2*1*1+2*1)/(26-1-1)
+c(BIC(model4), BIC(model3a), BIC(model3b), BIC(model3c), BIC(model2a), BIC(model2b), BIC(model2c), BIC(model1))
+c(AIC(model4), AIC(model3a), AIC(model3b), AIC(model3c), AIC(model2a), AIC(model2b), AIC(model2c), AIC(model1)) + c(aicp4, aicp3, aicp3, aicp3, aicp2, aicp2, aicp2, aicp1)
 
 # now use traditional logistic regression function for comparing chosen and null models
 model2a <- glm(Did_A_win ~ l_300_diff + l_16345_diff, family=binomial, data=x)
