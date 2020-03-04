@@ -36,4 +36,4 @@ alignments/ -- Clustal Omega alignments of control regions from Kang et al. and 
 
 summary/ -- summary and fit statistics of tissue-specific mouse segregation observations 
   mouse-segregation.ods -- spreadsheet of tissue-specific mouse segregation observations and fit statistics
-  present-mouse-tissues.nb -- Mathematica notebook producing a graphical visualisation of these observations (used in Fig 2 of article)
+  [present-mouse-tissues.nb] -- Mathematica notebook producing a graphical visualisation of these observations (used in Fig 2 of article)
