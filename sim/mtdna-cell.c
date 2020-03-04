@@ -1,254 +1,263 @@
-// mtDNA selfishness simulation: RTS model with cell-level selection
+// mtDNA selfishness simulation
 
-// simulate time evolution of cellular systems involving mixed mtDNA types which replicate and transcribe at different rates
-// cells are individuals; after simulating a whole bunch of initial conditions we look at the population to see what proportion ends up exceeding a "bioenergetic threshold" defined by mtDNA and protein numbers
-// the "tissue-wide" statistics for different rate parameters are then output
+// simulate time evolution of systems involving mixed mtDNA types which replicate and transcribe at different rates
+// mitochondria are individuals; they survive or are recycled according to the complement of protein machinery that their mtDNAs have produced
 
-// takes a command-line argument: whether to scale rates by current state (1) or not (0)
+// takes a command-line argument: 0 (span parameter space) or 1 (focus on a particular region of parameter space)
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#define NSAMP 100000
-
-#define BASIC 0
-
-// maximum number of "marked" initial conditions that we can record for successfull initial condition states
-#define MAXMARK 10000
-
 #define RND drand48()
 
-// structure to hold parameterisation for the model
-typedef struct tmpParams 
-{
-  // c reflects the overall "activity" of mtDNA
-  // lambdaw, lambdam describe how this activity is partitioned into replication (lambda) vs transcription (1-lambda)
-  // nu, nup are degradation rates of mtDNA and protein respectively
-  // t, model are timescale and structure of model respectively
-  
-  double c, nu, nup, lambdaw, lambdam;
-  double t;
-  int model;
-} Params;
+// number of (stochastic) runs for each parameterisation
+#define NIT 20
 
-// simulate or solve the ODEs governing the system
-
-// model 0: simple ODEs, separate rates for each species (explicit solution possible)
-// model 1: rates normalised by total mtDNA content (i.e. cellular resource required for replication is not infinite but must be shared across all mtDNAs) (numerical solution required)
-
-// simulate or solve the ODEs governing the system
-// w0, m0 are mtDNA initial conditions
-// (0, 0) are protein initial conditions
-// w, m are mtDNA levels with time
-// pw, pm are protein levels with time
-// P.t is the timescale of the simulation
-
-void Simulate(Params P, int w0, int m0, double *w, double *m, double *pw, double *pm)
-{
-  double t, dt = 0.01;
-  double dw, dm, dpw, dpm;
-
-  if(P.model == 0)
-    {
-      // explicit solutions of model 0 ODEs
-      *w = w0*exp(P.t*(P.c*P.lambdaw-P.nu));
-      *m = m0*exp(P.t*(P.c*P.lambdam-P.nu));
-      *pw = -(P.c*exp(-P.nup*P.t)*(-1.+exp(P.t*(P.c*P.lambdaw-P.nu+P.nup)))*w0*(-1+P.lambdaw))/(P.c*P.lambdaw-P.nu+P.nup);
-      *pm = -(P.c*exp(-P.nup*P.t)*(-1.+exp(P.t*(P.c*P.lambdam-P.nu+P.nup)))*m0*(-1+P.lambdam))/(P.c*P.lambdam-P.nu+P.nup);
-    }
-  if(P.model == 1)
-    {
-      // initial conditions
-      *w = w0; *m = m0; *pw = 0; *pm = 0;
-      // simple euler solver
-      for(t = 0; t < P.t; t += dt)
-	{
-	  // here the replication rates are normalised by total mtDNA content
-	  dw = -P.nu*(*w) + P.c*P.lambdaw*(*w)/((*w)+(*m));
-	  dm = -P.nu*(*m) + P.c*P.lambdam*(*m)/((*w)+(*m));
-	  dpw = -P.nup*(*pw) + P.c*(1-P.lambdaw)*(*w)/((*w)+(*m));
-	  dpm = -P.nup*(*pm) + P.c*(1-P.lambdam)*(*m)/((*w)+(*m));
-	  (*w) += dw*dt;
-	  (*m) += dm*dt;
-	  (*pw) += dpw*dt;
-	  (*pm) += dpm*dt;
-	}
-    }
-}
+// time scale of simulation
+#define MAXT 100
+#define MAXM 100.
 
 int main(int argc, char *argv[])
 {
-  double epsilon;
-  Params P;
-  int w0, m0;
-  double w, m, pw, pm;
-  double wgrid[100][100], mgrid[100][100], pwgrid[100][100], pmgrid[100][100];
-  int mark0[MAXMARK], mark1[MAXMARK];
-  int nmark;
-  double thresh;
-  FILE *fp;
-  double b;
-  int r;
-  double meanhet;
-  int i;
-  int expt;
-  char str[100];
-  int mym0;
-  double meanh, normh;
-
-  // general approach is to loop through initial conditions m0 = {0...10} and w0 = {0...100}
-  // we compute the final state of the cell for each
-  // imposing a given threshold, we identify those initial conditions that give a "power" exceeding this threshold
-  // we then sample the final states within this set to compute the final heteroplasmy
-
-  // process command-line argument
-  // expt determines the model structure (whether or not replication rates are scaled by total mtDNA content)
-  expt = 0;
+  int m1[1000], newm1[1000];
+  int m2[1000], newm2[1000];
+  double p[1000], newp[1000];
+  int n, newn;
+  int t;
+  int i, j;
+  double lambda1, lambda2, gamma, kappa, kappap;
+  double threshold;
+  double *het, *tot, *pdist, meanh, sdh, meant, sdt, meanp, sdp;
+  int it;
+  FILE *fp, *fp1;
+  char str[200];
+  double nowgamma;
+  double l1start, l1end, l1step, l2step;
+  int zoom, traceoutput;
+  int r, killed;
+  
+  // process command-line arguments: if "1", we investigate a particular region of parameter space in detail, otherwise we span space
+  zoom = 0;
   if(argc < 2)
     {
-      printf("Model structure not specified; using gamma = 0\n");
+      printf("Zoom not specified: running default\n");
     }
   else if(atoi(argv[1]) == 1)
     {
-      printf("Using gamma = 1\n");
-      expt = 1;
+      printf("Running zoomed version\n");
+      zoom = 1;
     }
-  else printf("Using gamma = 0\n");
+  else printf("Running default version\n");
   
-  // lambdaw is wild-type replication rate, against which "foreign selfishness" is measured
-  for(P.lambdaw = 0.2; P.lambdaw <= 0.8; P.lambdaw += 0.3)
+  if(zoom)
     {
-      // epsilon describes how negative interaction between mtDNAs changes "power" (i.e. how much mixed mtDNAs are a problem)
-       for(epsilon = 0; epsilon <= 0.001; epsilon += 0.001)
+      l1start = 0.25; l1end = 0.3; l1step = 0.05;
+      l2step = 0.01;
+    }
+  else
+    {
+      l1start = 0.1; l1end = 0.9; l1step = 0.1;
+      l2step = 0.05;
+    }
+
+  // allocate memory to store statistics
+  het = (double*)malloc(sizeof(double)*NIT*MAXT);
+  tot = (double*)malloc(sizeof(double)*NIT*MAXT);
+  pdist = (double*)malloc(sizeof(double)*NIT*MAXT);
+
+  // loop through values of lambda1
+  for(lambda1 = l1start; lambda1 <= l1end; lambda1+= l1step)
+    {
+      lambda2 = 0.05; gamma = 0.1; kappa = 0.01; kappap = 0.1;
+      threshold = 5;
+
+      // open corresponding file for output 
+      if(zoom)
 	{
-	  // mym0 is the initial mutant copy number
-	  for(mym0 = 10; mym0 <= 90; mym0 += 10)
+	  sprintf(str, "mtdna-mc-zoom-overall-%.3f.txt", lambda1);
+	}
+      else
+	{
+	  sprintf(str, "mtdna-mc-overall-%.3f.txt", lambda1);
+	}
+      fp = fopen(str, "w");
+
+      // loop through values of lambda2
+      for(lambda2 = 0.; lambda2 <= 1; lambda2 += l2step)
+	{
+	  // decide whether to output explicit time series or not (only for a couple of selected parameterisations)
+	  if(zoom == 0 && lambda1 >= 0.29 && lambda1 <= 0.31 && ((lambda2 >= 0.19 && lambda2 <= 0.21) || (lambda2 >= 0.39 && lambda2 <= 0.41)))
+	    traceoutput = 1;
+	  else
+	    traceoutput = 0;
+
+	  if(traceoutput)
 	    {
+	      sprintf(str, "mtdna-mc-trace-%.3f-%.3f.txt", lambda1, lambda2);
+	      fp1 = fopen(str, "w");
+	    }
+
+	  // loop through different values of the selective threshold
+	  for(threshold = 0*MAXM; threshold < 5*MAXM; threshold += 0.2*MAXM)
+	    {
+	      // loop through stochastic runs
+	      for(it = 0; it < NIT; it++)
 		{
-		  sprintf(str, "mtdna-cell-%i-%i-%.3f-%.1f.txt", expt, mym0, epsilon, P.lambdaw);
-		  fp = fopen(str, "w");
+		  printf("%f %f %i\n", lambda2, threshold, it);
 
-		  // mtDNA and protein degradation rates are set to unit rate in both models 
-		  P.nu = P.nup = 1;
-
-		  // set specific activities, timescales, and model labels for the two different model structures
-		  if(expt == 0)
+		  // initial conditions: n is number of cells, m1/2[i] is the number of type 1/2 mtDNA in cell i; p[i] is the number of proteins in cell i
+		  n = 100;
+		  for(i = 0; i < n; i++)
 		    {
-		      P.c = 4;
-		      P.t = 10;
-		      P.model = 0;
-		    }
-		  else
-		    {
-		      P.c = 400;
-		      P.t = 1;
-		      P.model = 1;
+		      m1[i] = RND*100;
+		      m2[i] = 100-m1[i];
+		      p[i] = (100*10);
 		    }
 
-		  // run a dummy simulation at a fixed parameter set to check performance 
-		  P.lambdam = 0.6; w0 = 50; m0 = 5;
-		  Simulate(P, w0, m0, &w, &m, &pw, &pm);
-		  fprintf(fp, "# %f %f %f %f\n", w, m, pw, pm);
-
-		  // initialise the grids that will be used to store "final" states for each initial condition
-		  for(w0 = 0; w0 < 100; w0++)
-		    {
-		      for(m0 = 0; m0 < 100; m0++)
-			wgrid[w0][m0] = mgrid[w0][m0] = pwgrid[w0][m0] = pmgrid[w0][m0] = 0;
-		    }
-
-		  // loop through "foreign selfishness" (i.e. mutant replication rate relative to fixed wildtype rate)
-		  for(P.lambdam = 0.1; P.lambdam <= 0.9; P.lambdam += 0.01)
+		  // run through time course
+		  for(t = 0; t < MAXT; t++)
 		    {
 
-		      printf("Computing %f %f %f %i %i\n", P.lambdaw, P.lambdam, epsilon, mym0, expt);
-		  
-		      meanh = normh = 0;
-		      // loop through initial conditions, and store final state for each
-		      for(w0 = 0; w0 < 100-mym0; w0++)
+		      // buffer state of system
+		      for(i = 0; i < n; i++)
 			{
-			  for(m0 = 0; m0 < mym0; m0++)
-			    {
-			      Simulate(P, w0, m0, &w, &m, &pw, &pm);
-			      wgrid[w0][m0] = w;
-			      mgrid[w0][m0] = m;
-			      pwgrid[w0][m0] = pw;
-			      pmgrid[w0][m0] = pm;
-		  
-			      // gracefully handle mtDNA extinction and record heteroplasmy
-			      if(w0 == 0)
-				{
-				  if(m0 != 0) { meanh += 1; normh++; }
-				}
-			      else
-				{
-				  meanh += (double)m0 / (m0+w0);
-				  normh++;
-				}
-			    }
+			  newm1[i] = m1[i];
+			  newm2[i] = m2[i];
+			  newp[i] = p[i];
 			}
+		      newn = n;
 
-		      // loop through "bioenergetic threshold" values
-		      for(thresh = 0.; thresh < 2; thresh += 0.01)
+		      // loop through cells
+		      for(i = 0; i < n; i++)
 			{
-			  nmark = 0;
+			  // update gamma
+			  nowgamma = gamma*(1.-(m1[i]+m2[i])/MAXM);
 
-			  // loop through prerecorded set of initial conditions
-			  for(w0 = 0; w0 < 100-mym0; w0++)
+			  // loop through mitos in cell
+			  for(j = 0; j < m1[i]+m2[i]; j++)
 			    {
-			      for(m0 = 0; m0 < mym0; m0++)
+			      if(RND < nowgamma && newn < 1000)
 				{
-				  // "power" is computed from prerecorded simulated values 
-				  b = pwgrid[w0][m0] + pmgrid[w0][m0] - epsilon*pwgrid[w0][m0]*pmgrid[w0][m0];
-				  if(wgrid[w0][m0] + mgrid[w0][m0] > 0)
+				  // this mito is going to do something
+				  if(j < m1[i])
 				    {
-				      // normalise power by number of mtDNAs
-				      b /= (wgrid[w0][m0] + mgrid[w0][m0]);
-				      if(b > thresh)
-					{
-					  // if our final power exceeds this threshold, store the initial conditions that gave rise to this
-					  mark0[nmark] = w0;
-					  mark1[nmark] = m0;
-					  nmark++;
-					  if(nmark > MAXMARK-1)
-					    {
-					      printf("too many marks\n");
-					      exit(0);
-					    }
-					}
+				      if(RND < lambda1) newm1[i]++;
+				      else newp[i]++;
+				    }
+				  else
+				    {
+				      if(RND < lambda2) newm2[i]++;
+				      else newp[i]++;
 				    }
 				}
-			    }
-
-			  // if no initial conditions exceed the threshold, store this fact
-			  if(nmark == 0)
-			    fprintf(fp, "%f %f -1\n", P.lambdam, thresh);
-			  else
-			    {
-			      // otherwise, sample some of those initial conditions that did exceed the threshold, and compute the final heteroplasmy for each
-			      meanhet = 0;
-			      for(i = 0; i < NSAMP; i++)
+			      if(RND < kappa)
 				{
-				  r = RND*nmark;
-				  meanhet += (mgrid[mark0[r]][mark1[r]])/(wgrid[mark0[r]][mark1[r]] + mgrid[mark0[r]][mark1[r]]);
-
-				  // we should have caught extinction cases, but tell us if something somehow slipped through
-				  if(isnan(meanhet))
-				    printf("undefined heteroplasmy found\n");
+				  if(j < m1[i]) newm1[i]--;
+				  else newm2[i]--;
 				}
-			      // output the final heteroplasmy here
-			      fprintf(fp, "%f %f %f %f %i\n", P.lambdam, thresh, meanh/normh, meanhet/NSAMP, nmark);
+			     
+			      if(RND < kappap && newp[i] > 0)
+				{
+				  // this mito will lose a protein through degradation 
+				  newp[i]--;
+				}
 			    }
 			}
-		      fprintf(fp, "\n");
+		      
+		      // now loop through cells applying selection
+		      killed = 0;
+		      for(i = 0; i < newn; i++)
+			{
+			  //			  if(RND < kappa)
+			  {
+			    // this cell is vulnerable
+			    if(newp[i] < threshold)
+			      {
+				// this cell is dysfunctional and will be degraded
+				// pop from cell list
+				for(j = i; j < newn-1; j++)
+				  {
+				    newm1[j] = newm1[j+1];
+				    newm2[j] = newm2[j+1];
+				    newp[j] = newp[j+1];
+				  }
+				newn--;
+				i--;
+				killed++;
+			      }
+			  }
+			}
+
+		      // if any cells survive, repopulate
+		      if(newn > 0)
+			{
+		      for(i = 0; i < killed; i++)
+			{
+			  r = RND*newn;
+			  newm1[newn+i] = newm1[r];
+			  newm2[newn+i] = newm2[r];
+			  newp[newn+i] = newp[r];
+			}
+		      newn += killed;
+			}
+		      
+		      // record statistics of system
+		      het[MAXT*it + t] = pdist[MAXT*it + t] = 0;
+		      for(i = 0; i < newn; i++)
+			{
+			  m1[i] = newm1[i];
+			  m2[i] = newm2[i];
+			  p[i] = newp[i];
+			  het[MAXT*it + t] += ((double)m2[i])/(m1[i]+m2[i]);
+			  if(isnan(het[MAXT*it + t]))
+			    printf("wtf\n");
+			  pdist[MAXT*it + t] += p[i];
+			}
+		      n = newn;
+		      tot[MAXT*it + t] = n;
+		      het[MAXT*it + t] /= newn;
 		    }
-		  fclose(fp);
 		}
+	      
+	      // simulation is done: compute time series statistics of system
+	      for(t = 0; t < MAXT; t++)
+		{
+		  meanh = sdh = 0; meant = sdt = 0; meanp = sdp = 0;
+		  for(it = 0; it < NIT; it++)
+		    {
+		      meanh += het[MAXT*it + t];
+		      meant += tot[MAXT*it + t];
+		      meanp += pdist[MAXT*it + t];
+		    }
+		  meanh /= NIT; meant /= NIT; meanp /= NIT;
+		  for(it = 0; it < NIT; it++)
+		    {
+		      sdh += (meanh-het[MAXT*it + t])*(meanh-het[MAXT*it + t]);
+		      sdt += (meant-tot[MAXT*it + t])*(meant-tot[MAXT*it + t]);
+		      sdp += (meanp-pdist[MAXT*it + t])*(meanp-pdist[MAXT*it + t]);
+		    }
+		  sdh = sqrt(sdh / (NIT-1));
+	  	  sdt = sqrt(sdt / (NIT-1));
+		  sdp = sqrt(sdp / (NIT-1));
+
+		  if(traceoutput)
+		    {
+		      // output these time series to file
+		      fprintf(fp1, "%.3f %i %f %f %f %f %f %f\n", threshold, t, meanh, sdh, meant, sdt, meanp, sdp);
+		    }
+		}
+	      // output the mean genetic summary to file
+	      fprintf(fp, "%.3f %.3f %f\n", lambda2, threshold, meanh);
+	    }
+	  fprintf(fp, "\n");
+	  if(traceoutput)
+	    {
+	      fclose(fp1);
 	    }
 	}
+      fclose(fp);
     }
   
   return 0;
 }
- 
