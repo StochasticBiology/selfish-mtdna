@@ -9,7 +9,7 @@ sim/ -- RTS simulation of selfish mtDNA dynamics. these simulations should take 
   plot-rts-0.000-0.000.sh -- plots "zoom"ed output (for a single lambda_1) of mtdna-mito.c in Gnuplot (used in Fig 2 of article)
   plot-si-rts-trellis-X-Y.sh -- plots output of mtdna-mito.c for parameterisation X, Y (for many lambda_1) in Gnuplot (Figs SXXX)
   plot-si-cell-trellis.sh -- plots output of mtdna-cell.c in Gnuplot (Fig S3)
-  plot-si-rts-time-series.sh -- plots time series output of mtdna-mito.c (0) in Gnuplot (Fig S2)
+  plot-si-rts-time-series-0.000.sh -- plots time series output of mtdna-mito.c (0) in Gnuplot (Fig S2)
   
 bioinf/ -- analyses G-quad regions in sequences from NCBI and Kang et al. papers. this analysis should take a few minutes on a modern machine.
   rcrs.txt -- data file containing revised Cambridge reference sequence (RCRS)
