@@ -3,11 +3,11 @@ Code for simulation and analysis of selfish mtDNA dynamics, and links with G-qua
 C, R, shell script, and Gnuplot scripts; one preprocessing and one visualisation Mathematica notebook are included but not required to proceed.
 
 sim/ -- RTS simulation of selfish mtDNA dynamics. these simulations should take a few hours to run on a modern machine.
-  mtdna-mito.c -- simulates RTS model with mito-level selection. command-line argument determines whether parameter space is spanned (0) or a zoomed-in region is investigated (1)
+  mtdna-mito.c -- simulates RTS model with mito-level selection. command-line arguments determines [1] whether parameter space is spanned (0) or a zoomed-in region is investigated (1); [2] probability of failure of replication initiation (0-1); [3] amount of protein mixing between mitochondrial elements (0-1)
   mtdna-cell.c -- simulates RTS model with cell-level selection (SI of article), command-line argument determines structure of model (0, rates constant; 1, rates scaled by copy number) 
 
-  plot-rts.sh -- plots output of mtdna-mito.c (1) in Gnuplot (used in Fig 2 of article)
-  plot-si-rts-trellis.sh -- plots output of mtdna-mito.c (0) in Gnuplot (Fig S1)
+  plot-rts-0.000-0.000.sh -- plots "zoom"ed output (for a single lambda_1) of mtdna-mito.c in Gnuplot (used in Fig 2 of article)
+  plot-si-rts-trellis-X-Y.sh -- plots output of mtdna-mito.c for parameterisation X, Y (for many lambda_1) in Gnuplot (Figs SXXX)
   plot-si-cell-trellis.sh -- plots output of mtdna-cell.c in Gnuplot (Fig S3)
   plot-si-rts-time-series.sh -- plots time series output of mtdna-mito.c (0) in Gnuplot (Fig S2)
   
