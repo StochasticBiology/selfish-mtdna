@@ -16,13 +16,18 @@
 
 // time scale of simulation
 #define MAXT 100
-#define MAXM 100.
+
+// sets feedback control of mtDNA replication
+#define MSTAR 100.
+
+// maximum number of mtDNA for memory allocation
+#define MAXM 1000
 
 int main(int argc, char *argv[])
 {
-  int m1[1000], newm1[1000];
-  int m2[1000], newm2[1000];
-  double p[1000], newp[1000];
+  int m1[MAXM], newm1[MAXM];
+  int m2[MAXM], newm2[MAXM];
+  double p[MAXM], newp[MAXM];
   int n, newn;
   int t;
   int i, j;
@@ -99,7 +104,7 @@ int main(int argc, char *argv[])
 	    }
 
 	  // loop through different values of the selective threshold
-	  for(threshold = 0*MAXM; threshold < 5*MAXM; threshold += 0.2*MAXM)
+	  for(threshold = 0*MSTAR; threshold < 5*MSTAR; threshold += 0.2*MSTAR)
 	    {
 	      // loop through stochastic runs
 	      for(it = 0; it < NIT; it++)
@@ -132,12 +137,12 @@ int main(int argc, char *argv[])
 		      for(i = 0; i < n; i++)
 			{
 			  // update gamma
-			  nowgamma = gamma*(1.-(m1[i]+m2[i])/MAXM);
+			  nowgamma = gamma*(1.-(m1[i]+m2[i])/MSTAR);
 
 			  // loop through mitos in cell
 			  for(j = 0; j < m1[i]+m2[i]; j++)
 			    {
-			      if(RND < nowgamma && newn < 1000)
+			      if(RND < nowgamma && newn < MAXM)
 				{
 				  // this mito is going to do something
 				  if(j < m1[i])
