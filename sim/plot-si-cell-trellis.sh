@@ -25,7 +25,7 @@ splot "mtdna-mc-overall-0.100.txt" u ($1-lambda1-offset):2:(2*($3-0.5))
 
 set origin 0.33,0
 lambda1 = 0.2
-set label 2 at graph 0.92,graph 0.96 "*" front
+#set label 2 at graph 0.92,graph 0.96 "*" front
 set label 1 at graph 0.05, graph 0.9 "λ₁ = 0.2" front
 set xrange [-lambda1-offset:0.9-lambda1-offset]
 splot "mtdna-mc-overall-0.200.txt" u ($1-lambda1-offset):2:(2*($3-0.5))
