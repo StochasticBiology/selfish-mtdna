@@ -11,56 +11,66 @@
 
 #define RND drand48()
 
-// number of (stochastic) runs for each parameterisation
-#define NIT 100
-
 // time scale of simulation
 #define MAXT 1000
 
+// max number of mtDNAs
+#define MSTAR 1000
+
 int main(int argc, char *argv[])
 {
-  int m[1000], newm[1000];
-  double p[1000], newp[1000];
+  int m[MSTAR+1], newm[MSTAR+1];
+  double p[MSTAR+1], newp[MSTAR+1];
+  double fail_prob;
+  double p_diff;
   int n, newn;
   int t;
   int i, j;
   double lambda1, lambda2, gamma, kappa, kappap;
   double threshold;
-  double *het, *tot, meanh, sdh, meant, sdt;
+  double *het, *tot, *pdist, meanh, sdh, meant, sdt, meanp, sdp;
   int it;
   FILE *fp, *fp1;
   char str[200];
   double nowgamma;
-  double l1start, l1end, l1step, l2step;
+  double l1start, l1end, l1step, l2start, l2end, l2step;
   int zoom, traceoutput;
-
-  // process command-line arguments: if "1", we investigate a particular region of parameter space in detail, otherwise we span space
-  zoom = 0;
-  if(argc < 2)
-    {
-      printf("Zoom not specified: running default\n");
-    }
-  else if(atoi(argv[1]) == 1)
-    {
-      printf("Running zoomed version\n");
-      zoom = 1;
-    }
-  else printf("Running default version\n");
+  double tstep;
+  int NIT;
   
+  // process command-line arguments
+  if(argc < 4)
+    {
+      printf("Need three arguments: parameter space zoom (0 or 1), replication failure probability (0-1), and protein mixing (0-1)\n");
+      return 0;
+    }
+  if(atoi(argv[1]) == 1) zoom = 1;
+  else zoom = 0;
+  fail_prob = atof(argv[2]);
+  p_diff = atof(argv[3]);
+  
+  printf("Running with zoom=%i fail_prob=%.3f p_diff=%.3f\n", zoom, fail_prob, p_diff);
+
+  // set limits for parameter space span, based on whether we're running the "zoom"ed version or not
   if(zoom)
     {
-      l1start = 0.25; l1end = 0.3; l1step = 0.05;
-      l2step = 0.01;
+      l1start = 0.3; l1end = 0.3; l1step = 0.05;
+      l2start = 0.25; l2end = 0.35; l2step = 0.001;
+      tstep = 0.05;
+      NIT = 500;
     }
   else
     {
       l1start = 0.1; l1end = 0.9; l1step = 0.1;
-      l2step = 0.05;
+      l2start = 0.; l2end = 1; l2step = 0.05;
+      tstep = 0.1;
+      NIT = 10;
     }
 
   // allocate memory to store statistics
   het = (double*)malloc(sizeof(double)*NIT*MAXT);
   tot = (double*)malloc(sizeof(double)*NIT*MAXT);
+  pdist = (double*)malloc(sizeof(double)*NIT*MAXT);
 
   // loop through values of lambda1
   for(lambda1 = l1start; lambda1 <= l1end; lambda1+= l1step)
@@ -71,16 +81,16 @@ int main(int argc, char *argv[])
       // open corresponding file for output 
       if(zoom)
 	{
-	  sprintf(str, "mtdna-mito-zoom-overall-%.3f.txt", lambda1);
+	  sprintf(str, "mtdna-mito-%.3f-%.3f-zoom-overall-%.3f.txt", fail_prob, p_diff, lambda1);
 	}
       else
 	{
-	  sprintf(str, "mtdna-mito-overall-%.3f.txt", lambda1);
+	  sprintf(str, "mtdna-mito-%.3f-%.3f-overall-%.3f.txt", fail_prob, p_diff, lambda1);
 	}
       fp = fopen(str, "w");
 
       // loop through values of lambda2
-      for(lambda2 = 0.; lambda2 <= 1; lambda2 += l2step)
+      for(lambda2 = l2start; lambda2 <= l2end; lambda2 += l2step)
 	{
 	  // decide whether to output explicit time series or not (only for a couple of selected parameterisations)
 	  if(zoom == 0 && lambda1 >= 0.29 && lambda1 <= 0.31 && ((lambda2 >= 0.19 && lambda2 <= 0.21) || (lambda2 >= 0.39 && lambda2 <= 0.41)))
@@ -90,12 +100,12 @@ int main(int argc, char *argv[])
 
 	  if(traceoutput)
 	    {
-	      sprintf(str, "mtdna-mito-trace-%.3f-%.3f.txt", lambda1, lambda2);
+	      sprintf(str, "mtdna-mito-%.3f-%.3f-trace-%.3f-%.3f.txt", fail_prob, p_diff, lambda1, lambda2);
 	      fp1 = fopen(str, "w");
 	    }
 
 	  // loop through different values of the selective threshold
-	  for(threshold = 0; threshold < 3; threshold += 0.1)
+	  for(threshold = 0; threshold < 3; threshold += tstep)
 	    {
 	      // loop through stochastic runs
 	      for(it = 0; it < NIT; it++)
@@ -114,7 +124,7 @@ int main(int argc, char *argv[])
 		  for(t = 0; t < MAXT; t++)
 		    {
 		      // update gamma
-		      nowgamma = gamma*(1.-n/1000.);
+		      nowgamma = gamma*(1.-(double)n/MSTAR);
 
 		      // buffer state of system
 		      for(i = 0; i < n; i++)
@@ -127,16 +137,19 @@ int main(int argc, char *argv[])
 		      // loop through mitos
 		      for(i = 0; i < n; i++)
 			{
-			  if(RND < nowgamma && newn < 1000)
+			  if(RND < nowgamma && newn < MSTAR)
 			    {
-			      // this mito is going to do something
 			      if((m[i] == 1 && RND < lambda1) || (m[i] == 2 && RND < lambda2))
 				{
-				  // this mito will replicate, producing a new one with same mtDNA type, and halving protein content between the two
-				  newm[newn] = m[i];
-				  newp[i] /= 2.;
-				  newp[n] = p[i];
-				  newn++;
+				  // this mito is going to do something				  
+				  if(RND > fail_prob)
+				    {
+				      // this mito will replicate, producing a new one with same mtDNA type, and halving protein content between the two
+				      newm[newn] = m[i];
+				      newp[i] /= 2.;
+				      newp[newn] = newp[i];
+				      newn++;
+				    }
 				}
 			      else
 				{
@@ -151,6 +164,18 @@ int main(int argc, char *argv[])
 			    }
 			}
 
+		      meanp = 0;
+		      // equilibrate proteins according to amount of mixing
+		      for(i = 0; i < newn; i++)
+			{
+			  meanp += newp[i];
+			}
+		      meanp /= newn;
+		      for(i = 0; i < newn; i++)
+			{
+			  newp[i] += p_diff*(meanp-newp[i]);
+			}
+		      
 		      // now loop through mitos applying selection
 		      for(i = 0; i < newn; i++)
 			{
@@ -167,46 +192,52 @@ int main(int argc, char *argv[])
 				      newp[j] = newp[j+1];
 				    }
 				  newn--;
+				  i--;
 				}
 			    }
 			}
 
 		      // record statistics of system
-		      het[MAXT*it + t] = 0;
+		      het[MAXT*it + t] = pdist[MAXT*it + t] = 0;
 		      for(i = 0; i < newn; i++)
 			{
 			  m[i] = newm[i];
 			  p[i] = newp[i];
 			  het[MAXT*it + t] += (m[i]-1);
+			  pdist[MAXT*it + t] += p[i];
 			}
 		      n = newn;
 		      tot[MAXT*it + t] = n;
 		      het[MAXT*it + t] /= newn;
 		    }
 		}
+		
 	      
 	      // simulation is done: compute time series statistics of system
 	      for(t = 0; t < MAXT; t++)
 		{
-		  meanh = sdh = 0; meant = sdt = 0;
+		  meanh = sdh = 0; meant = sdt = 0; meanp = sdp = 0;
 		  for(it = 0; it < NIT; it++)
 		    {
 		      meanh += het[MAXT*it + t];
 		      meant += tot[MAXT*it + t];
+		      meanp += pdist[MAXT*it + t];
 		    }
-		  meanh /= NIT; meant /= NIT;
+		  meanh /= NIT; meant /= NIT; meanp /= NIT;
 		  for(it = 0; it < NIT; it++)
 		    {
 		      sdh += (meanh-het[MAXT*it + t])*(meanh-het[MAXT*it + t]);
 		      sdt += (meant-tot[MAXT*it + t])*(meant-tot[MAXT*it + t]);
+		      sdp += (meanp-pdist[MAXT*it + t])*(meanp-pdist[MAXT*it + t]);
 		    }
 		  sdh = sqrt(sdh / (NIT-1));
 	  	  sdt = sqrt(sdt / (NIT-1));
+		  sdp = sqrt(sdp / (NIT-1));
 
 		  if(traceoutput)
 		    {
 		      // output these time series to file
-		      fprintf(fp1, "%.3f %i %f %f %f %f\n", threshold, t, meanh, sdh, meant, sdt);
+		      fprintf(fp1, "%.3f %i %f %f %f %f %f %f\n", threshold, t, meanh, sdh, meant, sdt, meanp, sdp);
 		    }
 		}
 	      // output the mean genetic summary to file
